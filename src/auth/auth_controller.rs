@@ -1,15 +1,15 @@
 use crate::{
     auth::{
         auth_service,
-        dtos::{AuthError, Login, Signup},
+        dtos::{Login, Signup},
     },
-    shared::ApiResponse,
+    shared::{ApiResponse, AppError},
 };
 
 use axum::{Json, http::StatusCode};
 pub async fn sign_up(
     Json(payload): Json<Signup>,
-) -> Result<(StatusCode, Json<ApiResponse<String>>), AuthError> {
+) -> Result<(StatusCode, Json<ApiResponse<String>>), AppError> {
     let result = auth_service::signup(payload).await?;
     Ok((
         StatusCode::CREATED,
@@ -22,7 +22,7 @@ pub async fn sign_up(
 
 pub async fn login(
     Json(payload): Json<Login>,
-) -> Result<(StatusCode, Json<ApiResponse<String>>), AuthError> {
+) -> Result<(StatusCode, Json<ApiResponse<String>>), AppError> {
     let result = auth_service::login(payload).await?;
     Ok((
         StatusCode::OK,

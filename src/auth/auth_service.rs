@@ -1,26 +1,28 @@
 use crate::{
-    auth::dtos::{AuthError, Login, Signup},
-    connect_db,
-    models::User,
-    schema::users::{self, dsl::*},
+    auth::dtos::{Login, Signup}, connect_db, models::User, schema::users::{self, dsl::*}, shared::AppError,
 };
 use bcrypt::DEFAULT_COST;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 
-pub async fn login(payload: Login) -> Result<String, AuthError> {
+pub async fn login(payload: Login) -> Result<String, AppError> {
     let mut conn = connect_db();
     let result = users
         .filter(email.eq(payload.email))
         .select(User::as_select())
-        .first(&mut conn)?;
+        .first(&mut conn).map_err(|err|match err {
+            diesel::result::Error::NotFound =>AppError::InvalidCredentials,
+            other =>AppError::Database(other)
+        })?;
+
+
     let is_valid = bcrypt::verify(payload.password, &result.password)?;
     if !is_valid {
-        return Err(AuthError::InvalidCredentials);
+        return Err(AppError::InvalidCredentials);
     }
     Ok("user logged in successfully".to_string())
 }
 
-pub async fn signup(payload: Signup) -> Result<String, AuthError> {
+pub async fn signup(payload: Signup) -> Result<String, AppError> {
     let mut conn = connect_db();
     let hash_password = bcrypt::hash(&payload.password, DEFAULT_COST)?;
 

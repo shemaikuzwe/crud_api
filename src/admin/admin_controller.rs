@@ -13,7 +13,8 @@ pub async fn get_users() -> Result<(StatusCode, Json<ApiResponse<Vec<UserSelect>
         StatusCode::OK,
         Json(ApiResponse {
             success: true,
-            message: users,
+            message: String::from("users fetched successfully"),
+            data: Some(users),
         }),
     ))
 }
@@ -26,7 +27,8 @@ pub async fn get_user(
         StatusCode::OK,
         Json(ApiResponse {
             success: true,
-            message: user,
+            message: String::from("user fetched successfully"),
+            data: Some(user),
         }),
     ))
 }
@@ -40,7 +42,8 @@ pub async fn update_user(
         StatusCode::OK,
         Json(ApiResponse {
             success: true,
-            message: user,
+            message: String::from("user updated successfully"),
+            data: Some(user),
         }),
     ))
 }
@@ -53,7 +56,8 @@ pub async fn delete_user(
         StatusCode::OK,
         Json(ApiResponse {
             success: true,
-            message: result,
+            message: String::from("user deleted"),
+            data: Some(result),
         }),
     ))
 }

@@ -7,6 +7,7 @@ pub mod schema;
 pub mod auth;
 pub mod admin;
 pub mod  shared;
+pub mod middleware;
 
 pub fn connect_db()->PgConnection{
  dotenv().ok();

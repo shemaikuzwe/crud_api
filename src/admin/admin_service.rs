@@ -18,7 +18,6 @@ pub async fn get_users() -> Result<Vec<UserSelect>, AppError> {
 
 pub async fn update_user(user_id:Uuid,payload: Update_dto) -> Result<User, AppError> {
     let mut conn = connect_db();
-    // let user_id = uuid::Uuid::parse_str(&id)?;
     let updated_user= diesel::update(users.filter(id.eq(user_id)))
         .set(&payload)
         .returning(User::as_returning())
@@ -28,20 +27,18 @@ pub async fn update_user(user_id:Uuid,payload: Update_dto) -> Result<User, AppEr
 pub async fn delete_user(user_id:Uuid) -> Result<String, AppError> {
     let mut conn = connect_db();
 
-    // let user_id = uuid::Uuid::parse_str(&user_id)?;
     diesel::delete(users.filter(id.eq(user_id))).execute(&mut conn)?;
     Ok("User deleted".to_string())
 }
 
 pub async fn get_user_by_id(user_id: Uuid) -> Result<UserSelect, shared::AppError> {
     let mut conn = connect_db();
-    // let user_id = uuid::Uuid::parse_str(&user_id)?;
     let user = usersTable::table
         .filter(usersTable::id.eq(user_id))
         .get_result(&mut conn)
         .map_err(|err| match err {
             diesel::result::Error::NotFound => AppError::NotFound,
-            other => AppError::Database(other),
+            other => other.into(),
         })?;
     Ok(user)
 }

@@ -1,4 +1,5 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct Signup {
@@ -11,4 +12,9 @@ pub struct Login {
     pub email: String,
     pub password: String,
 }
-
+#[derive(Debug, Clone,Serialize, Deserialize)]
+pub struct Payload {
+    pub id: Uuid,
+    pub email: String,
+    pub name: String,
+}

@@ -2,12 +2,12 @@ use serde::Serialize;
 
 use axum::{Json, http::StatusCode, response::IntoResponse};
 use thiserror::Error;
-use uuid::Error;
-
+use tracing::error;
 #[derive(Serialize)]
-pub struct ApiResponse<T> {
+pub struct ApiResponse<T:Serialize> {
     pub success: bool,
-    pub message: T,
+    pub message: String,
+    pub data:Option<T>
 }
 
 #[derive(Error, Debug)]
@@ -17,9 +17,14 @@ pub enum AppError {
 
     #[error("email already exists")]
     EmailAlreadyExists,
-
+    #[error("internal server error")]
+    InternalServerError,
+    #[error("invalid token")]
+    InvalidToken,
     #[error("resource not found")]
     NotFound,
+    #[error("Unauthorized")]
+    UnAuthorized,
     #[error("Database error")]
     Database(#[from] diesel::result::Error),
 
@@ -32,19 +37,24 @@ pub enum AppError {
 impl AppError {
     pub fn status_code(&self) -> StatusCode {
         match &self {
-            AppError::InvalidCredentials |AppError::Uuid(_) => StatusCode::BAD_REQUEST,
+            AppError::InvalidCredentials | AppError::Uuid(_) => StatusCode::BAD_REQUEST,
             AppError::EmailAlreadyExists => StatusCode::CONFLICT,
+            AppError::UnAuthorized=>StatusCode::UNAUTHORIZED,
+            AppError::InvalidToken =>StatusCode::BAD_REQUEST,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Database(_) | AppError::Password(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
+        error!("{}", self);
         let status = self.status_code();
-        let body = Json(ApiResponse {
+        let body = Json(ApiResponse::<String> {
             message: self.to_string(),
             success: false,
+            data:None
         });
         (status, body).into_response()
     }

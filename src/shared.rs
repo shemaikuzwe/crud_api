@@ -49,7 +49,7 @@ impl AppError {
 }
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        error!("{}", self);
+        error!("{self:?}");
         let status = self.status_code();
         let body = Json(ApiResponse::<String> {
             message: self.to_string(),

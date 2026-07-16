@@ -23,6 +23,7 @@ pub async fn get_user(
     Path(id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ApiResponse<UserSelect>>), AppError> {
     let user = admin_service::get_user_by_id(id).await?;
+    println!("{:?}",user);
     Ok((
         StatusCode::OK,
         Json(ApiResponse {
@@ -32,7 +33,6 @@ pub async fn get_user(
         }),
     ))
 }
-// #[axum::handl]
 pub async fn update_user(
     Path(id): Path<Uuid>,
     Json(payload): Json<Update_dto>,

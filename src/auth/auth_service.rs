@@ -1,15 +1,15 @@
-use std::env;
-
 use crate::{
     auth::dtos::{Login, Payload, Signup},
-    connect_db,
+    config, connect_db,
     models::{User, UserSelect},
     schema::users::{self, dsl::*},
     shared::AppError,
 };
 use bcrypt::DEFAULT_COST;
+use chrono::{Duration, Utc};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use tracing::error;
 
 pub async fn login(payload: Login) -> Result<(String, Payload), AppError> {
     let mut conn = connect_db();
@@ -25,10 +25,14 @@ pub async fn login(payload: Login) -> Result<(String, Payload), AppError> {
     if !is_valid {
         return Err(AppError::InvalidCredentials);
     }
+    let now = Utc::now();
     let payload = Payload {
         email: result.email,
         id: result.id,
         name: result.name,
+        sub: result.id,
+        iat: now.timestamp() as usize,
+        exp: (now + Duration::hours(24)).timestamp() as usize,
     };
     let token = sign_jwt(&payload)?;
     Ok((token, payload))
@@ -47,17 +51,21 @@ pub async fn signup(payload: Signup) -> Result<(String, Payload), AppError> {
         .values(&user)
         .returning(UserSelect::as_returning())
         .get_result(&mut conn)?;
+    let now = Utc::now();
     let payload = Payload {
         email: result.email,
         id: result.id,
         name: result.name,
+        sub: result.id,
+        iat: now.timestamp() as usize,
+        exp: (now + Duration::hours(24)).timestamp() as usize,
     };
     let token = sign_jwt(&payload)?;
     Ok((token, payload))
 }
 
 fn sign_jwt(payload: &Payload) -> Result<String, AppError> {
-    let jwt_secret = env::var("JWT_SECRET").map_err(|err| AppError::InternalServerError)?;
+    let jwt_secret = config().jwt_secret;
 
     let token = encode(
         &Header::default(),
@@ -65,20 +73,20 @@ fn sign_jwt(payload: &Payload) -> Result<String, AppError> {
         &EncodingKey::from_secret(jwt_secret.as_ref()),
     )
     .map_err(|err| {
-        //TODO: log error
+        error!("error: {:?}", err);
         AppError::InternalServerError
     })?;
     Ok(token)
 }
 pub fn verify_jwt(token: String) -> Result<Payload, AppError> {
-    let jwt_secret = env::var("JWT_SECRET").map_err(|err| AppError::InternalServerError)?;
+    let jwt_secret = config().jwt_secret;
     let payload = decode::<Payload>(
         &token,
         &DecodingKey::from_secret(jwt_secret.as_ref()),
         &Validation::default(),
     )
     .map_err(|err| {
-        //TODO: log error
+        error!("error: {:?}", err);
         AppError::InvalidToken
     })?
     .claims;

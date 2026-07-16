@@ -11,7 +11,7 @@ use crate::{
 
 pub async fn get_users() -> Result<Vec<UserSelect>, AppError> {
     let mut conn = connect_db();
-    let result = users.load::<UserSelect>(&mut conn)?;
+    let result = users.select(UserSelect::as_select()).load(&mut conn)?;
 
     Ok(result)
 }

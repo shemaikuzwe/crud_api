@@ -12,9 +12,12 @@ pub struct Login {
     pub email: String,
     pub password: String,
 }
-#[derive(Debug, Clone,Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Payload {
     pub id: Uuid,
+    pub sub: Uuid,
     pub email: String,
     pub name: String,
+    pub exp: usize,
+    pub iat:usize
 }

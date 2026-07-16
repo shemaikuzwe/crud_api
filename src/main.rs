@@ -1,14 +1,21 @@
 use axum::{
-    Router, middleware as axum_middleware, routing::{get, post},
+    Router, middleware as axum_middleware,
+    routing::{get, post},
 };
-use crud_api::{admin::admin_controller, auth::auth_controller, middleware::{auth_middleware::auth_middleware}};
+use crud_api::{
+    admin::admin_controller, auth::auth_controller, config,
+    middleware::auth_middleware::auth_middleware,
+};
 use tokio;
 use tower_http::trace::TraceLayer;
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::new("tower_http=debug,crud_api=debug")).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::new("tower_http=info,crud_api=info"))
+        .init();
     let app = Router::new()
         .route("/auth/signup", post(auth_controller::sign_up))
         .route("/auth/login", post(auth_controller::login))
@@ -22,6 +29,11 @@ async fn main() {
         //add layers/middlewares after
         .layer(TraceLayer::new_for_http())
         .layer(axum_middleware::from_fn(auth_middleware));
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let port = config().port;
+    let listener = tokio::net::TcpListener::bind(format!("localhost:{port}"))
+        .await
+        .unwrap();
+    info!("Server started on http://localhost:{:?}", port);
     axum::serve(listener, app).await.unwrap()
+   
 }

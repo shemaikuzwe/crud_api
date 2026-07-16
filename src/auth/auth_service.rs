@@ -1,17 +1,17 @@
 use crate::{
-    auth::dtos::{Login, Payload, Signup},
+    auth::dtos::{AuthResponse, Login, Payload, Signup},
     config, connect_db,
     models::{User, UserSelect},
     schema::users::{self, dsl::*},
     shared::AppError,
 };
+use axum_extra::extract::{CookieJar, cookie::Cookie};
 use bcrypt::DEFAULT_COST;
-use chrono::{Duration, Utc};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use tracing::error;
 
-pub async fn login(payload: Login) -> Result<(String, Payload), AppError> {
+pub async fn login(payload: Login) -> Result<AuthResponse, AppError> {
     let mut conn = connect_db();
     let result = users
         .filter(email.eq(payload.email))
@@ -25,20 +25,17 @@ pub async fn login(payload: Login) -> Result<(String, Payload), AppError> {
     if !is_valid {
         return Err(AppError::InvalidCredentials);
     }
-    let now = Utc::now();
-    let payload = Payload {
-        email: result.email,
-        id: result.id,
-        name: result.name,
-        sub: result.id,
-        iat: now.timestamp() as usize,
-        exp: (now + Duration::hours(24)).timestamp() as usize,
-    };
+    let payload = result.into();
     let token = sign_jwt(&payload)?;
-    Ok((token, payload))
+    let jar = set_cookie(CookieJar::new(), token.as_str());
+    Ok(AuthResponse {
+        jar,
+        token,
+        payload,
+    })
 }
 
-pub async fn signup(payload: Signup) -> Result<(String, Payload), AppError> {
+pub async fn signup(payload: Signup) -> Result<AuthResponse, AppError> {
     let mut conn = connect_db();
     let hash_password = bcrypt::hash(&payload.password, DEFAULT_COST)?;
 
@@ -51,17 +48,15 @@ pub async fn signup(payload: Signup) -> Result<(String, Payload), AppError> {
         .values(&user)
         .returning(UserSelect::as_returning())
         .get_result(&mut conn)?;
-    let now = Utc::now();
-    let payload = Payload {
-        email: result.email,
-        id: result.id,
-        name: result.name,
-        sub: result.id,
-        iat: now.timestamp() as usize,
-        exp: (now + Duration::hours(24)).timestamp() as usize,
-    };
+    let payload = result.into();
     let token = sign_jwt(&payload)?;
-    Ok((token, payload))
+    let jar = set_cookie(CookieJar::new(), token.as_str());
+
+    Ok(AuthResponse {
+        jar,
+        token,
+        payload,
+    })
 }
 
 fn sign_jwt(payload: &Payload) -> Result<String, AppError> {
@@ -91,4 +86,13 @@ pub fn verify_jwt(token: String) -> Result<Payload, AppError> {
     })?
     .claims;
     Ok(payload)
+}
+fn set_cookie(jar: CookieJar, token: &str) -> CookieJar {
+    let cookie = Cookie::build(("auth.token", token.to_string()))
+        .path("/")
+        .secure(false)
+        .same_site(axum_extra::extract::cookie::SameSite::Lax)
+        .max_age(time::Duration::days(1))
+        .build();
+    jar.add(cookie)
 }

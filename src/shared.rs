@@ -3,7 +3,7 @@ use serde::Serialize;
 use axum::{Json, http::StatusCode, response::IntoResponse};
 use thiserror::Error;
 use tracing::error;
-#[derive(Serialize)]
+#[derive(Debug,Serialize)]
 pub struct ApiResponse<T:Serialize> {
     pub success: bool,
     pub message: String,

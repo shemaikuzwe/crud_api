@@ -14,7 +14,7 @@ use tracing_subscriber::EnvFilter;
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new("tower_http=info,crud_api=info"))
+        .with_env_filter(EnvFilter::new("tower_http=debug,crud_api=debug"))
         .init();
     let app = Router::new()
         .route("/auth/signup", post(auth_controller::sign_up))
@@ -29,11 +29,11 @@ async fn main() {
         //add layers/middlewares after
         .layer(TraceLayer::new_for_http())
         .layer(axum_middleware::from_fn(auth_middleware));
+    let app = Router::new().nest("/v1", app);
     let port = config().port;
     let listener = tokio::net::TcpListener::bind(format!("localhost:{port}"))
         .await
         .unwrap();
     info!("Server started on http://localhost:{:?}", port);
     axum::serve(listener, app).await.unwrap()
-   
 }

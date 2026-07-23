@@ -14,7 +14,7 @@ use tracing_subscriber::EnvFilter;
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new("tower_http=info,crud_api=info"))
+        .with_env_filter(EnvFilter::new("tower_http=debug,crud_api=debug"))
         .init();
     let app = Router::new()
         .route("/auth/signup", post(auth_controller::sign_up))

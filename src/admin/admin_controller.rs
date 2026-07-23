@@ -1,13 +1,13 @@
 use axum::{Json, extract::Path, http::StatusCode};
 use uuid::Uuid;
-
 use crate::{
     admin::{admin_service, dtos::Update_dto},
     models::{User, UserSelect},
     shared::{ApiResponse, AppError},
 };
 
-pub async fn get_users() -> Result<(StatusCode, Json<ApiResponse<Vec<UserSelect>>>), AppError> {
+
+pub async fn get_users()  {
     let users = admin_service::get_users().await?;
     Ok((
         StatusCode::OK,

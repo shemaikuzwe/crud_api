@@ -1,5 +1,4 @@
 
-use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -26,7 +25,6 @@ pub struct Payload {
 }
 #[derive(Debug)]
 pub struct AuthResponse {
-    pub jar: CookieJar,
-    pub token: String,
+    pub token:String,
     pub payload: Payload
 }

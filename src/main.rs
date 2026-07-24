@@ -1,39 +1,41 @@
-use axum::{
-    Router, middleware as axum_middleware,
-    routing::{get, post},
+use actix_web::{
+    App, HttpServer,
+    middleware::{self, Logger},
+    web,
 };
 use crud_api::{
-    admin::admin_controller, auth::auth_controller, config,
+    admin::admin_controller::{delete_user, get_user, get_users, update_user},
+    auth::auth_controller::{login, sign_up},
+    config,
     middleware::auth_middleware::auth_middleware,
 };
-use tokio;
-use tower_http::trace::TraceLayer;
+use env_logger::Env;
+use tokio::{self, io};
 use tracing::info;
-use tracing_subscriber::EnvFilter;
 
-#[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new("tower_http=debug,crud_api=debug"))
-        .init();
-    let app = Router::new()
-        .route("/auth/signup", post(auth_controller::sign_up))
-        .route("/auth/login", post(auth_controller::login))
-        .route("/admin/users", get(admin_controller::get_users))
-        .route(
-            "/admin/users/{id}",
-            get(admin_controller::get_user)
-                .put(admin_controller::update_user)
-                .delete(admin_controller::delete_user),
-        )
-        //add layers/middlewares after
-        .layer(TraceLayer::new_for_http())
-        .layer(axum_middleware::from_fn(auth_middleware));
+
+#[actix_web::main]
+async fn main() -> io::Result<()> {
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+
     let port = config().port;
-    let listener = tokio::net::TcpListener::bind(format!("localhost:{port}"))
-        .await
-        .unwrap();
+    let server = HttpServer::new(|| {
+        App::new()
+            .wrap(Logger::default())
+            .wrap(middleware::from_fn(auth_middleware))
+            .service(
+                web::scope("/v1")
+                    .service(
+                        web::scope("/admin")
+                            .service(get_users)
+                            .service(get_user)
+                            .service(update_user)
+                            .service(delete_user),
+                    )
+                    .service(web::scope("/auth").service(login).service(sign_up)),
+            )
+    })
+    .bind(format!("localhost:{port}"))?;
     info!("Server started on http://localhost:{:?}", port);
-    axum::serve(listener, app).await.unwrap()
-   
+    server.run().await
 }

@@ -5,7 +5,7 @@ use crate::{
     schema::users::{self, dsl::*},
     shared::AppError,
 };
-use axum_extra::extract::{CookieJar, cookie::Cookie};
+use actix_web::cookie::{self, Cookie};
 use bcrypt::DEFAULT_COST;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
@@ -27,9 +27,7 @@ pub async fn login(payload: Login) -> Result<AuthResponse, AppError> {
     }
     let payload = result.into();
     let token = sign_jwt(&payload)?;
-    let jar = set_cookie(CookieJar::new(), token.as_str());
     Ok(AuthResponse {
-        jar,
         token,
         payload,
     })
@@ -50,10 +48,8 @@ pub async fn signup(payload: Signup) -> Result<AuthResponse, AppError> {
         .get_result(&mut conn)?;
     let payload = result.into();
     let token = sign_jwt(&payload)?;
-    let jar = set_cookie(CookieJar::new(), token.as_str());
 
     Ok(AuthResponse {
-        jar,
         token,
         payload,
     })
@@ -87,12 +83,11 @@ pub fn verify_jwt(token: String) -> Result<Payload, AppError> {
     .claims;
     Ok(payload)
 }
-fn set_cookie(jar: CookieJar, token: &str) -> CookieJar {
-    let cookie = Cookie::build(("auth.token", token.to_string()))
+pub fn set_cookie(token: &str) -> Cookie<'_> {
+    Cookie::build("auth.token", token.to_string())
         .path("/")
         .secure(false)
-        .same_site(axum_extra::extract::cookie::SameSite::Lax)
+        .same_site(cookie::SameSite::Lax)
         .max_age(time::Duration::days(1))
-        .build();
-    jar.add(cookie)
+        .finish()
 }

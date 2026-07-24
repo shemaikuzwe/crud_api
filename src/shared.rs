@@ -1,13 +1,13 @@
+use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use serde::Serialize;
 
-use axum::{Json, http::StatusCode, response::IntoResponse};
 use thiserror::Error;
 use tracing::error;
-#[derive(Debug,Serialize)]
-pub struct ApiResponse<T:Serialize> {
+#[derive(Debug, Serialize)]
+pub struct ApiResponse<T: Serialize> {
     pub success: bool,
     pub message: String,
-    pub data:Option<T>
+    pub data: Option<T>,
 }
 
 #[derive(Error, Debug)]
@@ -39,23 +39,24 @@ impl AppError {
         match &self {
             AppError::InvalidCredentials | AppError::Uuid(_) => StatusCode::BAD_REQUEST,
             AppError::EmailAlreadyExists => StatusCode::CONFLICT,
-            AppError::UnAuthorized=>StatusCode::UNAUTHORIZED,
-            AppError::InvalidToken =>StatusCode::BAD_REQUEST,
+            AppError::UnAuthorized => StatusCode::UNAUTHORIZED,
+            AppError::InvalidToken => StatusCode::BAD_REQUEST,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Database(_) | AppError::Password(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR
+            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
-impl IntoResponse for AppError {
-    fn into_response(self) -> axum::response::Response {
+impl ResponseError for AppError {
+    fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
         error!("{self:?}");
-        let status = self.status_code();
-        let body = Json(ApiResponse::<String> {
+        HttpResponse::build(self.status_code()).json(ApiResponse::<()> {
+            data: None,
             message: self.to_string(),
             success: false,
-            data:None
-        });
-        (status, body).into_response()
+        })
+    }
+    fn status_code(&self) -> actix_web::http::StatusCode {
+        self.status_code()
     }
 }

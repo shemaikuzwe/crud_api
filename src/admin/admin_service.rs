@@ -2,7 +2,7 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use uuid::Uuid;
 
 use crate::{
-    admin::dtos::Update_dto,
+    admin::dtos::UpdateDto,
     connect_db,
     models::{User, UserSelect},
     schema::users::{self as usersTable, dsl::*},
@@ -16,7 +16,7 @@ pub async fn get_users() -> Result<Vec<UserSelect>, AppError> {
     Ok(result)
 }
 
-pub async fn update_user(user_id:Uuid,payload: Update_dto) -> Result<User, AppError> {
+pub async fn update_user(user_id:Uuid,payload: UpdateDto) -> Result<User, AppError> {
     let mut conn = connect_db();
     let updated_user= diesel::update(users.filter(id.eq(user_id)))
         .set(&payload)

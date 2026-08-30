@@ -1,63 +1,47 @@
-use axum::{Json, extract::Path, http::StatusCode};
 use uuid::Uuid;
+use yam::server::{Json, Request};
 
 use crate::{
-    admin::{admin_service, dtos::Update_dto},
+    admin::{admin_service, dtos::UpdateDto},
     models::{User, UserSelect},
     shared::{ApiResponse, AppError},
 };
 
-pub async fn get_users() -> Result<(StatusCode, Json<ApiResponse<Vec<UserSelect>>>), AppError> {
+pub async fn get_users(_req: Request) -> Result<Json<ApiResponse<Vec<UserSelect>>>, AppError> {
     let users = admin_service::get_users().await?;
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse {
-            success: true,
-            message: String::from("users fetched successfully"),
-            data: Some(users),
-        }),
-    ))
+    Ok(Json(ApiResponse {
+        success: true,
+        message: String::from("users fetched successfully"),
+        data: Some(users),
+    }))
 }
 
-pub async fn get_user(
-    Path(id): Path<Uuid>,
-) -> Result<(StatusCode, Json<ApiResponse<UserSelect>>), AppError> {
+pub async fn get_user(req: Request) -> Result<Json<ApiResponse<UserSelect>>, AppError> {
+    let id: Uuid = req.param_as("id").unwrap();
     let user = admin_service::get_user_by_id(id).await?;
-    println!("{:?}",user);
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse {
-            success: true,
-            message: String::from("user fetched successfully"),
-            data: Some(user),
-        }),
-    ))
+    Ok(Json(ApiResponse {
+        success: true,
+        message: String::from("user fetched successfully"),
+        data: Some(user),
+    }))
 }
-pub async fn update_user(
-    Path(id): Path<Uuid>,
-    Json(payload): Json<Update_dto>,
-) -> Result<(StatusCode, Json<ApiResponse<User>>), AppError> {
+pub async fn update_user(req: Request) -> Result<Json<ApiResponse<User>>, AppError> {
+    let id: Uuid = req.param_as("id")?;
+    let payload: UpdateDto = req.json()?;
     let user = admin_service::update_user(id, payload).await?;
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse {
-            success: true,
-            message: String::from("user updated successfully"),
-            data: Some(user),
-        }),
-    ))
+    Ok(Json(ApiResponse {
+        success: true,
+        message: String::from("user updated successfully"),
+        data: Some(user),
+    }))
 }
 
-pub async fn delete_user(
-    Path(id): Path<Uuid>,
-) -> Result<(StatusCode, Json<ApiResponse<String>>), AppError> {
+pub async fn delete_user(req: Request) -> Result<Json<ApiResponse<String>>, AppError> {
+    let id: Uuid = req.param_as("id")?;
     let result = admin_service::delete_user(id).await?;
-    Ok((
-        StatusCode::OK,
-        Json(ApiResponse {
-            success: true,
-            message: String::from("user deleted"),
-            data: Some(result),
-        }),
-    ))
+    Ok(Json(ApiResponse {
+        success: true,
+        message: String::from("user deleted"),
+        data: Some(result),
+    }))
 }

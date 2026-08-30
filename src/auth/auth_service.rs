@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     auth::dtos::{AuthResponse, Login, Payload, Signup},
     config, connect_db,
@@ -5,11 +7,11 @@ use crate::{
     schema::users::{self, dsl::*},
     shared::AppError,
 };
-use axum_extra::extract::{CookieJar, cookie::Cookie};
 use bcrypt::DEFAULT_COST;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use tracing::error;
+use yam::server::Cookie;
 
 pub async fn login(payload: Login) -> Result<AuthResponse, AppError> {
     let mut conn = connect_db();
@@ -27,9 +29,9 @@ pub async fn login(payload: Login) -> Result<AuthResponse, AppError> {
     }
     let payload = result.into();
     let token = sign_jwt(&payload)?;
-    let jar = set_cookie(CookieJar::new(), token.as_str());
+    let cookie = set_cookie(token.as_str());
     Ok(AuthResponse {
-        jar,
+        cookie,
         token,
         payload,
     })
@@ -50,10 +52,10 @@ pub async fn signup(payload: Signup) -> Result<AuthResponse, AppError> {
         .get_result(&mut conn)?;
     let payload = result.into();
     let token = sign_jwt(&payload)?;
-    let jar = set_cookie(CookieJar::new(), token.as_str());
+    let cookie = set_cookie(token.as_str());
 
     Ok(AuthResponse {
-        jar,
+        cookie,
         token,
         payload,
     })
@@ -87,12 +89,10 @@ pub fn verify_jwt(token: String) -> Result<Payload, AppError> {
     .claims;
     Ok(payload)
 }
-fn set_cookie(jar: CookieJar, token: &str) -> CookieJar {
-    let cookie = Cookie::build(("auth.token", token.to_string()))
+fn set_cookie(token: &str) -> Cookie {
+    Cookie::new("auth.token", token.to_string())
         .path("/")
         .secure(false)
-        .same_site(axum_extra::extract::cookie::SameSite::Lax)
-        .max_age(time::Duration::days(1))
-        .build();
-    jar.add(cookie)
+        .same_site(yam::server::SameSite::Lax)
+        .max_age(Duration::from_hours(24))
 }

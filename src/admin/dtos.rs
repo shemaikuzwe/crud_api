@@ -5,7 +5,7 @@ use crate::schema::users;
 
 #[derive(Debug,Deserialize,AsChangeset)]
 #[diesel(table_name=users)]
-pub struct Update_dto {
+pub struct UpdateDto {
     pub name: Option<String>,
     pub email: Option<String>,
 }

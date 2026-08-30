@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = { version = "0.8.9", features = ["http1","tower-log"] }
-axum-extra = { version = "0.10", features = ["cookie"] }
+yam ={ path = "../yam"}
 diesel = { version = "2.3.10", features = ["postgres","uuid"] }
 dotenv = "0.15.0"
 tokio = { version = "1.52.3", features = ["full"] }

@@ -1,13 +1,14 @@
 use serde::Serialize;
 
-use axum::{Json, http::StatusCode, response::IntoResponse};
+use serde_json::json;
 use thiserror::Error;
 use tracing::error;
-#[derive(Debug,Serialize)]
-pub struct ApiResponse<T:Serialize> {
+use yam::server::{IntoResponse, Response, StatusCode};
+#[derive(Debug, Serialize)]
+pub struct ApiResponse<T: Serialize> {
     pub success: bool,
     pub message: String,
-    pub data:Option<T>
+    pub data: Option<T>,
 }
 
 #[derive(Error, Debug)]
@@ -32,30 +33,34 @@ pub enum AppError {
     Password(#[from] bcrypt::BcryptError),
     #[error("failed to parse uuid")]
     Uuid(#[from] uuid::Error),
+    
+    #[error("http error: {0}")]
+    Http(#[from] yam::server::HttpError),
 }
 
 impl AppError {
     pub fn status_code(&self) -> StatusCode {
         match &self {
-            AppError::InvalidCredentials | AppError::Uuid(_) => StatusCode::BAD_REQUEST,
-            AppError::EmailAlreadyExists => StatusCode::CONFLICT,
-            AppError::UnAuthorized=>StatusCode::UNAUTHORIZED,
-            AppError::InvalidToken =>StatusCode::BAD_REQUEST,
-            AppError::NotFound => StatusCode::NOT_FOUND,
-            AppError::Database(_) | AppError::Password(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR
+            AppError::InvalidCredentials | AppError::Uuid(_) | AppError::Http(_) => {
+                StatusCode::StatusBadRequest
+            }
+            AppError::EmailAlreadyExists => StatusCode::StatusConflict,
+            AppError::UnAuthorized => StatusCode::StatusUnauthorized,
+            AppError::InvalidToken => StatusCode::StatusBadRequest,
+            AppError::NotFound => StatusCode::StatusFound,
+            AppError::Database(_) | AppError::Password(_) => StatusCode::StatusInternalServerError,
+            AppError::InternalServerError => StatusCode::StatusInternalServerError,
         }
     }
 }
 impl IntoResponse for AppError {
-    fn into_response(self) -> axum::response::Response {
+    fn into_response(self) -> Response {
         error!("{self:?}");
         let status = self.status_code();
-        let body = Json(ApiResponse::<String> {
-            message: self.to_string(),
-            success: false,
-            data:None
+        let body = json!({
+            "message": self.to_string(),
+            "success": false,
         });
-        (status, body).into_response()
+        Response::new().status(status).json(&body)
     }
 }

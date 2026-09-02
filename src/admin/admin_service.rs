@@ -16,15 +16,15 @@ pub async fn get_users() -> Result<Vec<UserSelect>, AppError> {
     Ok(result)
 }
 
-pub async fn update_user(user_id:Uuid,payload: UpdateDto) -> Result<User, AppError> {
+pub async fn update_user(user_id: Uuid, payload: UpdateDto) -> Result<User, AppError> {
     let mut conn = connect_db();
-    let updated_user= diesel::update(users.filter(id.eq(user_id)))
+    let updated_user = diesel::update(users.filter(id.eq(user_id)))
         .set(&payload)
         .returning(User::as_returning())
         .get_result(&mut conn)?;
     Ok(updated_user)
 }
-pub async fn delete_user(user_id:Uuid) -> Result<String, AppError> {
+pub async fn delete_user(user_id: Uuid) -> Result<String, AppError> {
     let mut conn = connect_db();
 
     diesel::delete(users.filter(id.eq(user_id))).execute(&mut conn)?;

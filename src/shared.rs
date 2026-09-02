@@ -33,7 +33,7 @@ pub enum AppError {
     Password(#[from] bcrypt::BcryptError),
     #[error("failed to parse uuid")]
     Uuid(#[from] uuid::Error),
-    
+
     #[error("http error: {0}")]
     Http(#[from] yam::server::HttpError),
 }

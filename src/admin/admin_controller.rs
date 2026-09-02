@@ -17,7 +17,7 @@ pub async fn get_users(_req: Request) -> Result<Json<ApiResponse<Vec<UserSelect>
 }
 
 pub async fn get_user(req: Request) -> Result<Json<ApiResponse<UserSelect>>, AppError> {
-    let id: Uuid = req.param_as("id").unwrap();
+    let id: Uuid = req.param_as("id")?;
     let user = admin_service::get_user_by_id(id).await?;
     Ok(Json(ApiResponse {
         success: true,

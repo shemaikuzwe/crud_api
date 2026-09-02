@@ -4,23 +4,23 @@ use uuid::Uuid;
 use crate::{
     admin::dtos::UpdateDto,
     connect_db,
-    models::{User, UserSelect},
+    models::UserResponse,
     schema::users::{self as usersTable, dsl::*},
     shared::{self, AppError},
 };
 
-pub async fn get_users() -> Result<Vec<UserSelect>, AppError> {
+pub async fn get_users() -> Result<Vec<UserResponse>, AppError> {
     let mut conn = connect_db();
-    let result = users.select(UserSelect::as_select()).load(&mut conn)?;
+    let result = users.select(UserResponse::as_select()).load(&mut conn)?;
 
     Ok(result)
 }
 
-pub async fn update_user(user_id: Uuid, payload: UpdateDto) -> Result<User, AppError> {
+pub async fn update_user(user_id: Uuid, payload: UpdateDto) -> Result<UserResponse, AppError> {
     let mut conn = connect_db();
     let updated_user = diesel::update(users.filter(id.eq(user_id)))
         .set(&payload)
-        .returning(User::as_returning())
+        .returning(UserResponse::as_returning())
         .get_result(&mut conn)?;
     Ok(updated_user)
 }
@@ -31,10 +31,11 @@ pub async fn delete_user(user_id: Uuid) -> Result<String, AppError> {
     Ok("User deleted".to_string())
 }
 
-pub async fn get_user_by_id(user_id: Uuid) -> Result<UserSelect, shared::AppError> {
+pub async fn get_user_by_id(user_id: Uuid) -> Result<UserResponse, shared::AppError> {
     let mut conn = connect_db();
     let user = usersTable::table
         .filter(usersTable::id.eq(user_id))
+        .select(UserResponse::as_select())
         .get_result(&mut conn)
         .map_err(|err| match err {
             diesel::result::Error::NotFound => AppError::NotFound,

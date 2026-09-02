@@ -36,3 +36,12 @@ impl From<UserSelect> for Payload {
         }
     }
 }
+
+#[derive(Debug, Queryable, Selectable, Serialize)]
+#[diesel(table_name=users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UserResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub email: String,
+}

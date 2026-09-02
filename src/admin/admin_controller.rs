@@ -3,11 +3,11 @@ use yam_http::server::{Json, Request};
 
 use crate::{
     admin::{admin_service, dtos::UpdateDto},
-    models::{User, UserSelect},
+    models::UserResponse,
     shared::{ApiResponse, AppError},
 };
 
-pub async fn get_users(_req: Request) -> Result<Json<ApiResponse<Vec<UserSelect>>>, AppError> {
+pub async fn get_users(_req: Request) -> Result<Json<ApiResponse<Vec<UserResponse>>>, AppError> {
     let users = admin_service::get_users().await?;
     Ok(Json(ApiResponse {
         success: true,
@@ -16,7 +16,7 @@ pub async fn get_users(_req: Request) -> Result<Json<ApiResponse<Vec<UserSelect>
     }))
 }
 
-pub async fn get_user(req: Request) -> Result<Json<ApiResponse<UserSelect>>, AppError> {
+pub async fn get_user(req: Request) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
     let id: Uuid = req.param_as("id")?;
     let user = admin_service::get_user_by_id(id).await?;
     Ok(Json(ApiResponse {
@@ -25,7 +25,7 @@ pub async fn get_user(req: Request) -> Result<Json<ApiResponse<UserSelect>>, App
         data: Some(user),
     }))
 }
-pub async fn update_user(req: Request) -> Result<Json<ApiResponse<User>>, AppError> {
+pub async fn update_user(req: Request) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
     let id: Uuid = req.param_as("id")?;
     let payload: UpdateDto = req.json()?;
     let user = admin_service::update_user(id, payload).await?;

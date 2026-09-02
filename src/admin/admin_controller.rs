@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use yam::server::{Json, Request};
+use yam_http::server::{Json, Request};
 
 use crate::{
     admin::{admin_service, dtos::UpdateDto},

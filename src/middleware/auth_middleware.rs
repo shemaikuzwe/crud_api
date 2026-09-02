@@ -1,4 +1,4 @@
-use yam::{
+use yam_http::{
     router::Next,
     server::{HttpError, IntoResponse, Request, Response},
 };

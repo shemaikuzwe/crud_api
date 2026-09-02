@@ -3,7 +3,8 @@ use serde::Serialize;
 use serde_json::json;
 use thiserror::Error;
 use tracing::error;
-use yam::server::{IntoResponse, Response, StatusCode};
+use yam_http::server::{IntoResponse, Response, StatusCode};
+
 #[derive(Debug, Serialize)]
 pub struct ApiResponse<T: Serialize> {
     pub success: bool,
@@ -35,7 +36,7 @@ pub enum AppError {
     Uuid(#[from] uuid::Error),
 
     #[error("http error: {0}")]
-    Http(#[from] yam::server::HttpError),
+    Http(#[from] yam_http::server::HttpError),
 }
 
 impl AppError {

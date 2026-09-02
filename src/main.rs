@@ -4,13 +4,15 @@ use crud_api::{
 };
 use tokio;
 use tracing::info;
-use yam::router::{Logger, router::Router};
+use yam_http::router::{
+    Logger,
+    router::{Router, RouterConfig},
+};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .init();
-    let mut app = Router::new(yam::router::router::RouterConfig {
+    tracing_subscriber::fmt().init();
+    let mut app = Router::new(RouterConfig {
         route_prefix: "/v1".into(),
         ..Default::default()
     });

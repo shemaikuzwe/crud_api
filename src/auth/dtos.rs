@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use yam::server::Cookie;
+use yam_http::server::Cookie;
 
 #[derive(Deserialize)]
 pub struct Signup {

@@ -6,13 +6,13 @@ use crate::{
     shared::{ApiResponse, AppError},
 };
 
-use yam::server::{Request, Response};
+use yam_http::server::{Request, Response};
 
 pub async fn sign_up(req: Request) -> Result<Response, AppError> {
     let payload: Signup = req.json()?;
     let result = auth_service::signup(payload).await?;
     let res = Response::new()
-        .status(yam::server::StatusCode::StatusCreated)
+        .status(yam_http::server::StatusCode::StatusCreated)
         .cookie(result.cookie)
         .json(&ApiResponse {
             data: Some(result.payload),

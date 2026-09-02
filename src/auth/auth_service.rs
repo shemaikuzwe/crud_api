@@ -11,7 +11,7 @@ use bcrypt::DEFAULT_COST;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use tracing::error;
-use yam::server::Cookie;
+use yam_http::server::Cookie;
 
 pub async fn login(payload: Login) -> Result<AuthResponse, AppError> {
     let mut conn = connect_db();
@@ -93,6 +93,6 @@ fn set_cookie(token: &str) -> Cookie {
     Cookie::new("auth.token", token.to_string())
         .path("/")
         .secure(false)
-        .same_site(yam::server::SameSite::Lax)
+        .same_site(yam_http::server::SameSite::Lax)
         .max_age(Duration::from_hours(24))
 }
